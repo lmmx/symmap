@@ -1,0 +1,174 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from pathlib import Path
+from imageio import imread
+from skimage.color import rgb2grey
+from skimage.morphology import medial_axis, skeletonize
+from cv2 import Canny, imread as cv_imread
+import cv2 as cv
+
+###################### Basic image functions ##########################
+
+def read_image(img_name, grey=False, use_opencv=False, uint8=False):
+    """
+    Read an image file (.png) into a numpy array in which each entry is
+    a row of pixels (i.e. ``len(img)`` is the image height in px. If
+    grey is True (default is False), returns a grayscale image (dtype
+    uint8 if RGBA, and dtype float32 if greyscale). use_opencv uses the
+    `cv2.imread` function rather than `imageio.imread`, which always
+    returns a dtype of uint8. uint8 will enforce dtype of uint8 (i.e.
+    for greyscale from `imageio.imread`) if set to True, but defaults
+    to False.
+    """
+    data_dir = Path('..') / 'img'
+    if use_opencv:
+        if grey:
+            img = cv_imread(data_dir / img_name, 0)
+        else:
+            img = cv_imread(data_dir / img_name)
+    else:
+        img = imread(data_dir / img_name, as_gray=grey)
+        if uint8 and img.dtype != 'uint8':
+            img = np.uint8(img)
+    return img
+
+def show_image(img, bw=False, alpha=1, no_ticks=True, title=''):
+    """
+    Show an image using a provided pixel row array.
+    If bw is True, displays single channel images in black and white.
+    """
+    if not bw:
+        plt.imshow(img, alpha=alpha)
+    else:
+        plt.imshow(img, alpha=alpha, cmap=plt.get_cmap('gray'))
+    if no_ticks:
+        plt.xticks([]), plt.yticks([])
+    if title != '':
+        plt.title = title
+    plt.show()
+    return
+
+def show_original(img_name):
+    """
+    Debugging/development: produce and display an original image
+    """
+    img = read_image(img_name)
+    show_image(img)
+    return img
+
+def save_image(image, figsize, save_path, ticks=False, grey=True):
+    """
+    Save a given image in a given location, default without ticks
+    along the x and y axis, and if there's only one channel
+    (i.e. if the image is greyscale) then use the gray cmap
+    (rather than matplot's default Viridis).
+    """
+    fig = plt.figure(figsize=figsize)
+    if grey:
+        plt.imshow(image, cmap=plt.get_cmap('gray'))
+    else:
+        plt.imshow(image)
+    if not ticks:
+        plt.xticks([]), plt.yticks([])
+    plt.tight_layout()
+    fig.savefig(save_path)
+    return
+
+################# Image gradients and edge detection #############
+
+def get_grads(img):
+    """
+    Convolve Sobel operator independently in x and y directions,
+    to give the image gradient.
+    """
+    dx = ndimage.sobel(img, 0)  # horizontal derivative
+    dy = ndimage.sobel(img, 1)  # vertical derivative
+    return dx, dy
+
+def get_grad(img, normalise_rgb=False):
+    dx, dy = get_grads(img)
+    mag = np.hypot(dx, dy)  # magnitude
+    if normalise_rgb:
+        mag *= 255.0 / numpy.max(mag)
+    return mag
+
+def auto_canny(image, sigma=0.4):
+    """
+    Zero parameter automatic Canny edge detection courtesy of
+    https://www.pyimagesearch.com - use a specified sigma value
+    (taken as 0.4 from Dekel et al. at Google Research, CVPR 2017)
+    to compute upper and lower bounds for the Canny algorithm
+    along with the median of the image, returning the edges.
+    
+    See the post at the following URL:
+    https://www.pyimagesearch.com/2015/04/06/zero-parameter-
+    automatic-canny-edge-detection-with-python-and-opencv/
+    """
+    v = np.median(image)
+    lower = int(max(0, (1.0 - sigma) * v))
+    upper = int(min(255, (1.0 + sigma) * v))
+    edged = Canny(image, lower, upper)
+    return edged
+
+def bbox(image):
+    """
+    Return a bounding box (rmin, rmax, cmin, cmax). To retrieve the
+    bounded region, access `image[rmin:rmax+1, cmin:cmax+1]`.
+    """
+    a = np.where(img != 0)
+    bbox = np.min(a[0]), np.max(a[0]), np.min(a[1]), np.max(a[1])
+    return bbox
+
+###################### Image channel functions #########################
+
+def to_rgb(im):
+    """
+    Turn a single valued array to a 3-tuple valued array of RGB, via
+    http://www.socouldanyone.com/2013/03/converting-grayscale-to-rgb
+    -with-numpy.html (solution 1a)
+    """
+    w, h = im.shape
+    ret = np.empty((w, h, 3), dtype=np.uint8)
+    ret[:, :, 2] = ret[:, :, 1] = ret[:, :, 0] = im
+    return ret
+
+################### Medial axis/skeleton functions #####################
+
+def auto_hand_img(canny_sigma=None):
+    """
+    Input image for scan_hand function.
+    """
+    im = read_image('../img/tek-kimia-03-hand-bw.png', grey=True, uint8=True)
+    if canny_sigma is None:
+        data = auto_canny(im)
+    else:
+        data = auto_canny(im, sigma=canny_sigma)
+    return data
+
+def scan_hand(data=None, im=None, canny_sigma=None):
+    """
+    Read in the hand image and run MAT on it then display next to original.
+    Code mainly via skimage plot_medial_transform example.
+    """
+    if data is None:
+        if im is None:
+            data = auto_hand_img(canny_sigma)
+        if canny_sigma is None:
+            data = auto_canny(im)
+        else:
+            data = auto_canny(im, sigma=canny_sigma)
+    # Compute the medial axis (skeleton) and the distance transform
+    skel, distance = medial_axis(data, return_distance=True)
+
+    # Distance to the background for pixels of the skeleton
+    dist_on_skel = distance * skel
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
+    ax1.imshow(data, cmap=plt.get_cmap('gray'), interpolation='nearest')
+    ax1.axis('off')
+    ax2.imshow(dist_on_skel, cmap=plt.get_cmap('Spectral'), interpolation='nearest')
+    ax2.contour(data, [0.5], colors='w')
+    ax2.axis('off')
+
+    fig.subplots_adjust(hspace=0.01, wspace=0.01, top=1, bottom=0, left=0, right=1)
+    plt.show()
