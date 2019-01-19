@@ -254,6 +254,19 @@ def medial_scan_hand(im=None, skeletonize=False, save_path=None):
     else:
         fig.savefig(save_path)
 
+def skeleton_hand(save_path=None):
+    """
+    Skeletonize the edge map of the hand photo, optionally saving to disk.
+    """
+    edged = auto_hand_img() / 255
+    im2 = to_rgba(np.copy(edged) * 255)
+    skel = skeletonize(edged)
+    im2[skel] = [255, 0, 0, 255]
+    if save_path is None:
+        return im2
+    else:
+        save_image(im2, (8,8), save_path)
+        return im2
 
 def reproduce_full_figure(save_path=None):
     """
