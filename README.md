@@ -128,4 +128,4 @@ im2[skel] = [255, 0, 0, 255] # set the skeleton pixels to red in the edge map co
 
 Lastly, the function `reproduce_full_figure` will display the 3 panels of the original figure:
 
-![](img/reproduced_figure.png)
+![](img/reproduced-figure.png)
