@@ -1,13 +1,16 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import cv2 as cv
 from pathlib import Path
 from subprocess import call
+from cv2 import Canny, imread as cv_imread
 from imageio import imread
 from skimage.color import rgb2grey
 from skimage.morphology import medial_axis, skeletonize
 from skimage.transform import resize
-from cv2 import Canny, imread as cv_imread
-import cv2 as cv
+# from blend_modes.blend_modes import multiply as multi
+from PIL import Image
+from PIL.ImageChops import multiply as multi
 
 ###################### Basic image functions ##########################
 
@@ -135,6 +138,17 @@ def to_rgb(im):
     ret[:, :, 2] = ret[:, :, 1] = ret[:, :, 0] = im
     return ret
 
+def to_rgba(im, alpha=255):
+    """
+    Turn a single valued array to a 4-tuple valued array of RGBA, with
+    alpha default to 255
+    """
+    w, h = im.shape
+    ret = np.empty((w, h, 4), dtype=np.uint8)
+    ret[:, :, 2] = ret[:, :, 1] = ret[:, :, 0] = im
+    ret[:, :, 3] = alpha
+    return ret
+
 ####################### Reproducing the edge map #######################
 
 def reproduce_edge_map():
@@ -142,11 +156,62 @@ def reproduce_edge_map():
             grey=True, uint8=True)
     imsml = resize(im, (310, 300), anti_aliasing=True)
     imsml = np.uint8(imsml * (255/np.max(imsml)))
-    for n in np.arange(200,520,20):
+    for n in np.arange(120,420,20):
         p = np.invert(Canny(imsml, 100, n))
         save_image(p, (8,8), f'../img/canny/hand-edge-100-{n}.png')
     call(['convert', '-delay', '20', '../img/canny/hand-edge-*.png',
           '../img/canny/hand-edge-100-anim.gif'])
+    return
+
+############ Overlay published vs. newly calculated edge maps ##########
+
+######################### DEPRECATED ###################################
+#def overlay_edge_maps(lval=100):
+#    """
+#    For a given edge detection lower value (lval), retrieve the edge maps
+#    stored in the img/canny directory and multiply the original published
+#    edge map over them (as in photo editing software).
+#
+#    Default is 100, as this is the value being used to demo, but also
+#    makes the function reusable if the results are not satisfactory.
+#    """
+#    o_path = Path(f'../img/canny/overlay{lval}/')
+#    bb = [] # reuse bbox values by storing outside of the loop context
+#    fg = read_image('../img/hand-edge-scaled-overlay.png')
+#    for n in np.arange(200,520,20):
+#        im = read_image(f'../img/canny/hand-edge-{lval}-{n}.png')
+#        if bb == []:
+#            bb = bbox(np.invert(im))
+#        a, b, c, d = bb
+#        imcrop = im[a+3:b-2, c+3:d-2]
+#        m = multi(imcrop.astype(float), fg.astype(float), 0.7)
+#        save_image(m, (8,8), o_path / f'hand-overlay-{lval}-{n}.png')
+#    call(['convert', '-delay', '20', o_path / f'hand-overlay-{lval}-*.png',
+#          o_path / f'hand-overlay-{lval}-anim.gif'])
+#    return
+
+def overlay_edge_maps(lval=100):
+    """
+    For a given edge detection lower value (lval), retrieve the edge maps
+    stored in the img/canny directory and multiply the original published
+    edge map over them (as in photo editing software).
+
+    Default is 100, as this is the value being used to demo, but also
+    makes the function reusable if the results are not satisfactory.
+    """
+    o_path = Path(f'../img/canny/overlay{lval}/')
+    bb = [] # reuse bbox values by storing outside of the loop context
+    fg = Image.open('../img/hand-edge-scaled-overlay.png')
+    for n in np.arange(120,420,20):
+        im = Image.open(f'../img/canny/hand-edge-{lval}-{n}.png')
+        if bb == []:
+            bb = bbox(np.invert(im))
+        a, b, c, d = bb
+        imcrop = im.crop((c+3, a+3, d-2, b-2))
+        m = multi(fg, imcrop)
+        m.save(o_path / f'hand-overlay-{lval}-{n}.png')
+    call(['convert', '-delay', '20', o_path / f'hand-overlay-{lval}-*.png',
+          o_path / f'hand-overlay-{lval}-anim.gif'])
     return
 
 ################### Medial axis/skeleton functions #####################

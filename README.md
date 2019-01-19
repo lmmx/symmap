@@ -30,7 +30,7 @@ imsml = resize(im, (310, 300), anti_aliasing=True)
 imsml = np.uint8(imsml * (255/np.max(imsml)))
 for n in np.arange(200,520,20):
     save_image(np.invert(Canny(imsml, 100, n)), (8,8), f'../img/canny/hand-edge-100-{n}.png')
-call(['convert', '-delay', '2', '../img/canny/hand-edge-*.png', '../img/canny/hand-edge-100-anim.gif'])
+call(['convert', '-delay', '20', '../img/canny/hand-edge-*.png', '../img/canny/hand-edge-100-anim.gif'])
 ```
 
 ![](img/canny/hand-edge-100-anim.gif)
@@ -53,6 +53,46 @@ Now the 2 images must be scaled to the same size, so as to compare their edges. 
 software shows it's possible, but not immediately clear how to proceed.
 
 ![](img/hand-edge-100-200_manual-edge-overlay.png)
+
+Because life is short and this isn't exactly the point of this exercise, I'm just going to export this scaled
+layer and use this for comparison. To reproduce the above image with the rest of those shown in the animation
+above, I loaded the python package `blend_modes` which implements a `multiply` function equivalent to that used
+in photo editing software _but it didn't work..._
+
+```py
+from blend_modes import multiply as multi
+# this package requires RGBA
+hand200cropRGBA = to_rgba(hand200crop)
+handscaled = read_image('../img/hand-edge-scaled-overlay.png')
+multiplied = multi(hand200cropRGBA.astype(float), handscaled.astype(float), 1.0)
+```
+
+`PIL.ImageChops` also implements this, but switching to PIL's `Image` class require a bit of rewriting.
+
+In PIL, cropping takes `(cmin, rmin, cmax, rmax)` rather than numpy's `[rmin, rmax, cmin, cmax]` which is
+given as `[a, b, c, d]` from the `bbox` function, such that cropping with PIL becomes:
+
+```py
+cropped = im_pil.crop((c, a, d, b))
+```
+
+Though here the increments/decrements remain the same as above: `a+3, b-2, c+3, d-2`.
+
+```py
+from PIL import Image
+from PIL.ImageChops import multiply as multi
+fg = Image.open('../img/hand-edge-scaled-overlay.png')
+im = Image.open('../img/canny/hand-edge-100-200.png').crop((c+3, a+3, d-2, b-2))
+blended = multiply(fg, im)
+# blended.show() or blended.save() will display the result
+```
+
+![](img/demo_mult_blended.png)
+
+Doing this for all the edge maps calculated for the lower Canny threshold of 100, you can make an animation
+showing the discrepancies from the published image, as below:
+
+![](img/canny/overlay100/hand-overlay-100-anim.gif)
 
 ## Usage
 
