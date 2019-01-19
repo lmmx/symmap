@@ -111,6 +111,21 @@ scan_hand()
 
 ![](img/hand-medial-transform.png)
 
-## Usage
+It's clearly visible here that the ridges demarcate the symmetry map, which can be made explicit by running
+`skimage.morphology.skeletonize` instead (the documentation notes that the two functions are actually distinct)
 
-Run `scan_hand` to reproduce and display (WIP)
+The last thing to do to finish this off is to display the skeleton alongside the symmetry map
+
+I think the artifactual 'spider web'-like extra lines are probably due to using a too-low
+resolution image, such that 'edges' are overdetected.
+
+```py
+im = auto_hand_img() # reload the edge map
+im2 = to_rgba(np.copy(im) * 255) # take an RGBA copy to add the skeleton onto
+skel = skeletonize(im) # given as a Boolean array
+im2[skel] = [255, 0, 0, 255] # set the skeleton pixels to red in the edge map copy
+```
+
+Lastly, the function `reproduce_full_figure` will display the 3 panels of the original figure:
+
+![](img/reproduced_figure.png)

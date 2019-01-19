@@ -226,10 +226,12 @@ def auto_hand_img(l=100, u=260):
     imcrop = im[a+3:b-2, c+3:d-2]
     return imcrop
 
-def scan_hand(im=None, save_path=None):
+def medial_scan_hand(im=None, skeletonize=False, save_path=None):
     """
     Read in the hand image and run MAT on it then display next to original.
-    Code mainly via skimage plot_medial_transform example.
+    Code via skimage plot_medial_transform example.
+
+    If save_path is given, will write the result to a file.
     """
     if im is None:
         im = auto_hand_img()
@@ -251,3 +253,35 @@ def scan_hand(im=None, save_path=None):
         plt.show()
     else:
         fig.savefig(save_path)
+
+
+def reproduce_full_figure(save_path=None):
+    """
+    Read in the hand image and run MAT on it then display next to original.
+
+    If save_path is given, will write the result to a file.
+    """
+    im = read_image('../img/tek-kimia-03-hand-hi-contrast.png',
+                    grey=True, uint8=True)
+    edged = auto_hand_img() / 255
+    im2 = to_rgba(np.copy(edged) * 255)
+    skel = skeletonize(edged)
+    im2[skel] = [255, 0, 0, 255]
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
+    ax1.imshow(im, cmap=plt.get_cmap('gray'), interpolation='nearest')
+    ax1.axis('off')
+    ax2.imshow(edged, cmap=plt.get_cmap('gray'))
+    ax2.axis('off')
+    ax3.imshow(im2)
+    ax3.axis('off')
+
+    fig.subplots_adjust(hspace=0.01, wspace=0.01, top=1, bottom=0, left=0, right=1)
+    plt.xticks([]), plt.yticks([])
+    plt.tight_layout()
+    if save_path is None:
+        plt.show()
+    else:
+        fig.savefig(save_path)
+    plt.close(fig)
+    return
