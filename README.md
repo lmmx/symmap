@@ -7,7 +7,7 @@ Specifically I want to reproduce figure 5 (parts c-e):
 
 using this image (from ig:raydons):
 
-![](raydons-hand.png)
+![](img/raydons-hand.png)
 
 The algorithm for computing the medial axis transform is outlined in detail
 [here](https://stackoverflow.com/a/52796778/2668831), and is implemented
