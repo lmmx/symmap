@@ -281,7 +281,7 @@ def reproduce_full_figure(save_path=None):
     skel = skeletonize(edged)
     im2[skel] = [255, 0, 0, 255]
 
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 8))
     ax1.imshow(im, cmap=plt.get_cmap('gray'), interpolation='nearest')
     ax1.axis('off')
     ax2.imshow(edged, cmap=plt.get_cmap('gray'))
