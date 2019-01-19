@@ -216,41 +216,38 @@ def overlay_edge_maps(lval=100):
 
 ################### Medial axis/skeleton functions #####################
 
-def auto_hand_img(canny_sigma=None):
+def auto_hand_img(l=100, u=260):
     """
     Input image for scan_hand function.
     """
-    im = read_image('../img/tek-kimia-03-hand-bw.png', grey=True, uint8=True)
-    if canny_sigma is None:
-        data = auto_canny(im)
-    else:
-        data = auto_canny(im, sigma=canny_sigma)
-    return data
+    im = read_image(f'../img/canny/hand-edge-{l}-{u}.png',
+                    grey=True, uint8=True)
+    a, b, c, d = bbox(np.invert(im))
+    imcrop = im[a+3:b-2, c+3:d-2]
+    return imcrop
 
-def scan_hand(data=None, im=None, canny_sigma=None):
+def scan_hand(im=None, save_path=None):
     """
     Read in the hand image and run MAT on it then display next to original.
     Code mainly via skimage plot_medial_transform example.
     """
-    if data is None:
-        if im is None:
-            data = auto_hand_img(canny_sigma)
-        if canny_sigma is None:
-            data = auto_canny(im)
-        else:
-            data = auto_canny(im, sigma=canny_sigma)
+    if im is None:
+        im = auto_hand_img()
     # Compute the medial axis (skeleton) and the distance transform
-    skel, distance = medial_axis(data, return_distance=True)
+    skel, distance = medial_axis(im, return_distance=True)
 
     # Distance to the background for pixels of the skeleton
     dist_on_skel = distance * skel
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
-    ax1.imshow(data, cmap=plt.get_cmap('gray'), interpolation='nearest')
+    ax1.imshow(im, cmap=plt.get_cmap('gray'), interpolation='nearest')
     ax1.axis('off')
     ax2.imshow(dist_on_skel, cmap=plt.get_cmap('Spectral'), interpolation='nearest')
-    ax2.contour(data, [0.5], colors='w')
+    ax2.contour(im, [0.5], colors='w')
     ax2.axis('off')
 
     fig.subplots_adjust(hspace=0.01, wspace=0.01, top=1, bottom=0, left=0, right=1)
-    plt.show()
+    if save_path is None:
+        plt.show()
+    else:
+        fig.savefig(save_path)

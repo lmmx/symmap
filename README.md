@@ -94,6 +94,23 @@ showing the discrepancies from the published image, as below:
 
 ![](img/canny/overlay100/hand-overlay-100-anim.gif)
 
+Looking through these, I chose the upper threshold of 260 as retaining most of the most important edges from
+the original publication (noting that some of those that are lost at this level indicate vein shadows rather
+than solid features).
+
+## Reproducing the symmetry map
+
+The last thing to do now is get the symmetry map for the edge map with Canny thresholds 100-260.
+
+The `scan_hand` function takes the aforementioned edge map and runs the code given in the scikit-image
+[`plot_medial_transform` example](http://scikit-image.org/docs/0.10.x/auto_examples/plot_medial_transform.html).
+
+```py
+scan_hand()
+```
+
+![](img/hand-medial-transform.png)
+
 ## Usage
 
 Run `scan_hand` to reproduce and display (WIP)
