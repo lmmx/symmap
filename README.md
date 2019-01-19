@@ -129,8 +129,28 @@ im2[skel] = [255, 0, 0, 255] # set the skeleton pixels to red in the edge map co
 ![](img/hand-skeleton.png)
 
 I think the artifactual 'spider web'-like extra lines are probably due to using a too-low
-resolution image, such that 'edges' are overdetected.
+resolution image, such that 'edges' are overdetected. To finish up, re-run with a larger image
+and experimenting with Gaussian blur's sigma value to reproduce the existing edge map:
+
+```py
+im = read_image('../img/tek-kimia-03-hand-hi-contrast.png', grey=True, uint8=True)
+p = np.invert(Canny(im, 100, 260))
+save_image(p, (8,8), f'../img/large-edge-100-260.png')
+from skimage.filters import gaussian
+blurred = gaussian(im, sigma=2)
+blurred = blurred * (255/np.max(blurred))
+edged = np.invert(Canny(blurred.astype(np.uint8), 50, 100))
+im2 = to_rgba(np.copy(edged))
+skel = skeletonize(edged / 255)
+im2[skel] = [255, 0, 0, 255]
+```
+
+Unfortunately this just makes the spidery banding worse!
+
+![](img/spidery-banded-skeleton.png)
 
 Lastly, the function `reproduce_full_figure` will display the 3 panels of the original figure:
 
 ![](img/reproduced-figure.png)
+
+To reproduce the full figure with the alternative, larger image size
