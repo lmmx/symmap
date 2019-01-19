@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
+from subprocess import call
 from imageio import imread
 from skimage.color import rgb2grey
 from skimage.morphology import medial_axis, skeletonize
+from skimage.transform import resize
 from cv2 import Canny, imread as cv_imread
 import cv2 as cv
 
@@ -72,6 +74,7 @@ def save_image(image, figsize, save_path, ticks=False, grey=True):
         plt.xticks([]), plt.yticks([])
     plt.tight_layout()
     fig.savefig(save_path)
+    plt.close(fig)
     return
 
 ################# Image gradients and edge detection #############
@@ -110,7 +113,7 @@ def auto_canny(image, sigma=0.4):
     edged = Canny(image, lower, upper)
     return edged
 
-def bbox(image):
+def bbox(img):
     """
     Return a bounding box (rmin, rmax, cmin, cmax). To retrieve the
     bounded region, access `image[rmin:rmax+1, cmin:cmax+1]`.
@@ -131,6 +134,20 @@ def to_rgb(im):
     ret = np.empty((w, h, 3), dtype=np.uint8)
     ret[:, :, 2] = ret[:, :, 1] = ret[:, :, 0] = im
     return ret
+
+####################### Reproducing the edge map #######################
+
+def reproduce_edge_map():
+    im = read_image('../img/tek-kimia-03-hand-hi-contrast.png', 
+            grey=True, uint8=True)
+    imsml = resize(im, (310, 300), anti_aliasing=True)
+    imsml = np.uint8(imsml * (255/np.max(imsml)))
+    for n in np.arange(200,520,20):
+        p = np.invert(Canny(imsml, 100, n))
+        save_image(p, (8,8), f'../img/canny/hand-edge-100-{n}.png')
+    call(['convert', '-delay', '20', '../img/canny/hand-edge-*.png',
+          '../img/canny/hand-edge-100-anim.gif'])
+    return
 
 ################### Medial axis/skeleton functions #####################
 
