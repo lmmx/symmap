@@ -5,11 +5,6 @@ Specifically I want to reproduce figure 5 (parts c-e), below
 
 ![](img/tek-kimia-03_hand.png)
 
-using this image (from ig:raydons) :cherry_blossom:
-
-
-![](img/raydons-hand.png)
-
 The algorithm for computing the medial axis transform is outlined in detail
 [here](https://stackoverflow.com/a/52796778/2668831), and is implemented
 in `scikit-image` as
@@ -17,8 +12,6 @@ in `scikit-image` as
 (as well as 
 [`skimage.morphology.skeletonize`](http://scikit-image.org/docs/dev/api/skimage.morphology.html#skeletonize)).
 
-## Walkthrough
+## Usage
 
-```py
-
-```
+Run `scan_hand` to reproduce and display (WIP)
