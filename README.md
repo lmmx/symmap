@@ -177,7 +177,17 @@ im2[blurred2 <= 180] = [0,0,0,255]
 im2[skel2] = [255, 0, 0, 255] # set the skeleton pixels to red in the edge map copy
 ```
 
+This can be found in the `heavy_blur_skeleton_hand` function, and produces the following output:
+
 ![](img/blurred-skeletonized-hand.png)
 
 That looks much better (but note the symmetry lines don't fully touch the edge map any more). As a
-final clean up, I'm going to change the sigma value to 2 on the Gaussian smoothing filter.
+final clean up, I'm going to change the sigma value to 2 on the Gaussian smoothing filter,
+implemented in the function `light_blur_skeleton_hand` (the results aren't significantly different
+so I'm leaving the heavy blur as the chosen reproduction).
+
+```py
+reproduce_full_figure(blur_skel=True)
+```
+
+![](img/reproduced-figure-blur-skel.png)

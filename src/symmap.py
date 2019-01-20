@@ -269,11 +269,40 @@ def skeleton_hand(save_path=None):
         save_image(im2, (8,8), save_path)
         return im2
 
-def blurred_skeleton_hand(save_path=None):
+def light_blur_skeleton_hand(save_path=None):
     """
     Skeletonize the edge map of the hand photo after applying a Gaussian
     filter (blur) to it first so as to remove the excess edges seen by the
-    skeletonize algorithm.
+    skeletonize algorithm. Light blur, sigma=2.
+    """
+    im = auto_hand_img() # reload the edge map
+    blurred = gaussian(np.copy(im)) 
+    #blurred = blurred * blurred # strengthen the image by multiplying
+    im2 = to_rgba(np.copy(im)) # take an RGBA copy to add the skeleton onto
+    skel = skeletonize(blurred) # given as a Boolean array
+    skel_blur = gaussian(np.copy(skel), sigma=2)
+    skel_blur *= (255/np.max(skel_blur))
+    # manually examine the distribution to set a threshold for binarisation
+    # for i in np.arange(0,101,1): print(np.percentile(skel_blur, i))
+    skel_blur[skel_blur >= 30] = 255
+    skel_blur[skel_blur < 30] = 0
+    skel2 = (skel_blur/255).astype(bool)
+    # also expand the edge map using the blurred version for visibility
+    im2[blurred <= 0.75] = [0,0,0,255]
+    # set the skeleton pixels to red in the edge map copy
+    im2[skel2] = [255, 0, 0, 255]
+    if save_path is None:
+        return im2
+    else:
+        save_image(im2, (8,8), save_path)
+        return im2
+
+
+def heavy_blur_skeleton_hand(save_path=None):
+    """
+    Skeletonize the edge map of the hand photo after applying a Gaussian
+    filter (blur) to it first so as to remove the excess edges seen by the
+    skeletonize algorithm. Heavy blur, sigma=3.
     """
     im = auto_hand_img() # reload the edge map
     blurred = gaussian(np.copy(im)) 
@@ -297,7 +326,7 @@ def blurred_skeleton_hand(save_path=None):
         save_image(im2, (8,8), save_path)
         return im2
 
-def reproduce_full_figure(save_path=None):
+def reproduce_full_figure(save_path=None, blur_skel=False):
     """
     Read in the hand image and run MAT on it then display next to original.
 
@@ -307,8 +336,11 @@ def reproduce_full_figure(save_path=None):
                     grey=True, uint8=True)
     edged = auto_hand_img() / 255
     im2 = to_rgba(np.copy(edged) * 255)
-    skel = skeletonize(edged)
-    im2[skel] = [255, 0, 0, 255]
+    if blur_skel:
+        im2 = heavy_blur_skeleton_hand()
+    else:
+        skel = skeletonize(edged)
+        im2[skel] = [255, 0, 0, 255]
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 8))
     ax1.imshow(im, cmap=plt.get_cmap('gray'), interpolation='nearest')
