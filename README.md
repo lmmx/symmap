@@ -12,6 +12,17 @@ in `scikit-image` as
 (as well as 
 [`skimage.morphology.skeletonize`](http://scikit-image.org/docs/dev/api/skimage.morphology.html#skeletonize)).
 
+### Results:
+
+Pretty much a success for a Saturday's work, highlighting:
+- the potential requirement for image resizing in edge detection to find edges in the first place
+  - looking back, may have been wise to spend some time trying Gaussian filters at this step
+- the tradeoff in terms of lost edge aliasing (which gives 'overdetection' of edges and a spidery symmetry map shown below).
+- the `auto_canny` function from pyimagesearch didn't work here so I ended up having to calculate a range of thresholds and examine them in animation
+  - in doing so I noticed the `blend_modes` package's `multiply` function doesn't seem to work as documented (but it can be done with plain old numpy)
+
+![](img/reproduced-figure-blur-skel-compare.png)
+
 ## Reproducing the edge map
 
 `auto_canny` did not work well, and I'm pretty sure that using a smaller image gave better results.
