@@ -138,7 +138,7 @@ p = np.invert(Canny(im, 100, 260))
 save_image(p, (8,8), f'../img/large-edge-100-260.png')
 from skimage.filters import gaussian
 blurred = gaussian(im, sigma=2)
-blurred = blurred * (255/np.max(blurred))
+blurred *= (255/np.max(blurred))
 edged = np.invert(Canny(blurred.astype(np.uint8), 50, 100))
 im2 = to_rgba(np.copy(edged))
 skel = skeletonize(edged / 255)
@@ -153,4 +153,31 @@ Lastly, the function `reproduce_full_figure` will display the 3 panels of the or
 
 ![](img/reproduced-figure.png)
 
-To reproduce the full figure with the alternative, larger image size
+## Postscript - resolving the spidery banding
+
+As a first attempt to remove the excess symmetry lines, I'll try smoothing the edge map first with
+a Gaussian filter (sigma=3) and manually examining and setting thresholds at 30/255 on the skeleton
+and 75% on the blurred edge map (i.e. thresholds for their binarisation).
+
+```py
+im = auto_hand_img() # reload the edge map
+blurred = gaussian(np.copy(im))
+#blurred = blurred * blurred # strengthen the image by multiplying
+im2 = to_rgba(np.copy(im)) # take an RGBA copy to add the skeleton onto
+skel = skeletonize(blurred) # given as a Boolean array
+skel_blur = gaussian(np.copy(skel), sigma=3)
+skel_blur *= (255/np.max(skel_blur))
+# manually examine the distribution to set a threshold for binarisation
+# for i in np.arange(0,101,1): print(np.percentile(skel_blur, i))
+skel_blur[skel_blur >= 30] = 255
+skel_blur[skel_blur < 30] = 0
+skel2 = (skel_blur/255).astype(bool)
+# expand the edge map a little for visibility
+im2[blurred2 <= 180] = [0,0,0,255]
+im2[skel2] = [255, 0, 0, 255] # set the skeleton pixels to red in the edge map copy
+```
+
+![](img/blurred-skeletonized-hand.png)
+
+That looks much better (but note the symmetry lines don't fully touch the edge map any more). As a
+final clean up, I'm going to change the sigma value to 2 on the Gaussian smoothing filter.
